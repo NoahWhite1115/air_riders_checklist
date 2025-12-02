@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kirby Checklist Replica</title>
+  <style>
+    :root {
+      --raspberry: #d93b44;
+      --apricot: #d6a34f;
+      --mint: #66b370;
+      --sky: #77a8d3;
+      --soft-cream: #f7f1e6;
+      --shell: #f3e6d6;
+      --shadow: rgba(0, 0, 0, 0.08);
+      --grid-line: rgba(209, 45, 56, 0.35);
+      --tile-mask: rgba(255, 230, 236, 0.75);
+      --text-strong: #3a2c2c;
+      --text-muted: #746c6c;
+      --reward-bg: linear-gradient(135deg, #f0c9ff, #b8ddff);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Avenir Next", "Futura", sans-serif;
+      background: var(--shell);
+      color: var(--text-strong);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .top-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      padding: 14px 18px 6px;
+      background: linear-gradient(180deg, #f6e7d3 0%, #f2dfc7 100%);
+      border-bottom: 3px solid var(--raspberry);
+      box-shadow: 0 6px 14px var(--shadow);
+    }
+
+    .top-slot {
+      height: 64px;
+      border-radius: 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 10px;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.3), 0 2px 8px var(--shadow);
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+    }
+
+    .top-slot span {
+      opacity: 0.9;
+    }
+
+    .top-slot .count {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .top-slot small {
+      opacity: 0.8;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .top-slot.red {
+      background: var(--raspberry);
+    }
+
+    .top-slot.gold {
+      background: var(--apricot);
+    }
+
+    .top-slot.green {
+      background: var(--mint);
+    }
+
+    .top-slot.blue {
+      background: var(--sky);
+    }
+
+    .top-slot.neutral {
+      background: #b8b8c4;
+      color: #f7f7fa;
+    }
+
+    .top-slot.active {
+      transform: translateY(-2px);
+      box-shadow: inset 0 3px 8px rgba(255, 255, 255, 0.35), 0 4px 12px rgba(0, 0, 0, 0.14);
+      filter: saturate(1.1);
+    }
+
+    .top-slot:not(.active) {
+      opacity: 0.8;
+    }
+
+    .center {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.9fr 1fr;
+      gap: 16px;
+      padding: 12px 18px 8px;
+      height: calc(100vh - 250px);
+      max-height: 840px;
+    }
+
+    .board-card,
+    .reward-card {
+      background: var(--soft-cream);
+      border-radius: 20px;
+      box-shadow: 0 12px 22px var(--shadow);
+      border: 3px solid #d2424b;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .board-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .board {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      border: 4px solid var(--raspberry);
+      border-radius: 12px;
+      display: grid;
+      overflow: hidden;
+      background-image:
+        radial-gradient(circle at 20% 20%, #ff9bd1 0%, transparent 35%),
+        radial-gradient(circle at 80% 30%, #ffd27a 0%, transparent 30%),
+        radial-gradient(circle at 40% 60%, #a2d9ff 0%, transparent 35%),
+        radial-gradient(circle at 70% 75%, #f7a8b8 0%, transparent 35%),
+        linear-gradient(120deg, #ffe2f1 0%, #f0f6ff 70%, #ffe5d6 100%);
+      background-size: cover;
+    }
+
+    .board::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--board-image, none) center / cover no-repeat;
+      filter: blur(2px) saturate(1.05);
+      transform: scale(1.02);
+      opacity: 0.90;
+      z-index: 0;
+      pointer-events: none;
+      display: none;
+    }
+
+    .board::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 226, 241, 0.65), rgba(240, 246, 255, 0.55), rgba(255, 229, 214, 0.7));
+      z-index: 0;
+      pointer-events: none;
+      display: none;
+    }
+
+    .board.has-image::before,
+    .board.has-image::after {
+      display: block;
+    }
+
+    .grid {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      z-index: 1;
+    }
+
+    .tile {
+      position: relative;
+      border: 1px solid var(--grid-line);
+      background: #fde2eb;
+      transition: background 0.2s ease, box-shadow 0.18s ease, transform 0.14s ease;
+    }
+
+    .tile.revealed {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    }
+
+    .tile.highlighted {
+      box-shadow: none;
+      position: relative;
+      filter: saturate(1.05);
+    }
+
+    .tile.dimmed {
+      filter: grayscale(100%) brightness(0.3);
+    }
+
+    .tile.dimmed::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+    }
+
+    .tile.selected {
+      outline: 3px solid var(--raspberry);
+      outline-offset: -2px;
+      box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--raspberry), 0 8px 16px var(--shadow);
+      z-index: 2;
+      transform: translateY(-1px);
+    }
+
+    .reward-card {
+      padding: 20px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      border-color: #d2424b;
+    }
+
+    .reward-visual {
+      background: var(--reward-bg);
+      border-radius: 16px;
+      border: 3px solid #dbe3ff;
+      height: 220px;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 6px 12px rgba(255, 255, 255, 0.4);
+    }
+
+    .burst {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, #fff 0%, #b5e3ff 40%, rgba(255, 255, 255, 0) 70%);
+      position: relative;
+      filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.65));
+    }
+
+    .burst::before,
+    .burst::after {
+      content: "";
+      position: absolute;
+      inset: 45%;
+      background: linear-gradient(180deg, #e9ffff 0%, #9fc2ff 100%);
+      transform: rotate(45deg);
+      border-radius: 4px;
+    }
+
+    .burst::after {
+      transform: rotate(-45deg);
+    }
+
+    .reward-meta {
+      text-align: center;
+    }
+
+    .reward-meta .type {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: #efe2ff;
+      color: #7b51c1;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .reward-meta h2 {
+      margin: 4px 0;
+      font-size: 26px;
+      letter-spacing: 0.2px;
+    }
+
+    .reward-meta p {
+      margin: 4px 0 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn {
+      background: linear-gradient(180deg, #f25057, #c83237);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(210, 73, 83, 0.32);
+      transition: transform 0.14s ease, box-shadow 0.18s ease;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 10px rgba(210, 73, 83, 0.24);
+    }
+
+    .filter-toggle {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 20;
+      background: #fff7f0;
+      border: 2px solid #d2424b;
+      color: #d2424b;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      border-radius: 12px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+    }
+
+    .filter-panel {
+      position: fixed;
+      top: 64px;
+      right: 18px;
+      width: 260px;
+      background: #fffaf4;
+      border: 2px solid #d2424b;
+      border-radius: 14px;
+      box-shadow: 0 14px 24px rgba(0, 0, 0, 0.12);
+      padding: 12px 14px;
+      display: none;
+      z-index: 20;
+    }
+
+    .filter-panel.open {
+      display: block;
+    }
+
+    .filter-panel h4 {
+      margin: 4px 0 10px;
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      color: var(--text-strong);
+    }
+
+    .filter-panel label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 6px 0 4px;
+      color: var(--text-muted);
+    }
+
+    .filter-panel select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #d9c2b2;
+      background: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-strong);
+    }
+
+    .filter-panel .filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .filter-panel .pill {
+      border: 1px solid #d2424b;
+      color: #d2424b;
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 12px 24px 22px;
+      background: #f0e1d3;
+      border-top: 3px solid #d2c2b2;
+      box-shadow: 0 -4px 10px var(--shadow);
+    }
+
+
+    .course-art {
+      height: 96px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #c2eafc, #a5d9a4);
+      border: 2px solid #ffffff;
+      box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .footer.no-art {
+      grid-template-columns: 1fr;
+    }
+
+    .challenge {
+      color: var(--text-strong);
+    }
+
+    .challenge h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0.3px;
+      color: #8e7f6a;
+      text-transform: uppercase;
+    }
+
+    .challenge p {
+      margin: 4px 0 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #3a2c2c;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.6px;
+    }
+
+    @media (max-width: 1100px) {
+      .center {
+        grid-template-columns: 1fr;
+      }
+
+      .reward-card {
+        order: -1;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .top-bar {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 12px;
+      }
+
+      .center {
+        padding: 12px;
+      }
+
+      .board {
+        aspect-ratio: 1 / 1;
+      }
+
+      .footer {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .course-art {
+        height: 64px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <button class="filter-toggle" id="filterToggle">Filters</button>
+    <div class="filter-panel" id="filterPanel">
+      <h4>Highlight filters</h4>
+      <label for="challengeFilter">Challenge type</label>
+      <select id="challengeFilter">
+        <option value="">Any</option>
+      </select>
+      <label for="rewardFilter">Reward type</label>
+      <select id="rewardFilter">
+        <option value="">Any</option>
+      </select>
+      <label for="statusFilter">Status</label>
+      <select id="statusFilter">
+        <option value="">Any</option>
+        <option value="complete">Complete</option>
+        <option value="incomplete">Incomplete</option>
+      </select>
+      <div class="filter-actions">
+        <button class="pill" id="clearFilters">Clear</button>
+      </div>
+    </div>
+    <div class="top-bar" id="tabs">
+      <div class="top-slot red active" data-tab="air-ride">
+        <div class="badge">A</div>
+        <div>
+          <div class="count" data-count>0</div>
+          <small data-total>/ 150</small>
+        </div>
+        <span data-label>Air Ride</span>
+      </div>
+      <div class="top-slot gold" data-tab="top-ride">
+        <div class="badge">T</div>
+        <div>
+          <div class="count" data-count>0</div>
+          <small data-total>/ 150</small>
+        </div>
+        <span data-label>Top Ride</span>
+      </div>
+      <div class="top-slot green" data-tab="city-trial">
+        <div class="badge">C</div>
+        <div>
+          <div class="count" data-count>0</div>
+          <small data-total>/ 150</small>
+        </div>
+        <span data-label>City Trial</span>
+      </div>
+      <div class="top-slot blue" data-tab="road-trip">
+        <div class="badge">R</div>
+        <div>
+          <div class="count" data-count>0</div>
+          <small data-total>/ 150</small>
+        </div>
+        <span data-label>Road Trip</span>
+      </div>
+      <div class="top-slot neutral" data-tab="online">
+        <div class="badge">O</div>
+        <div>
+          <div class="count" data-count>0</div>
+          <small data-total>/ 150</small>
+        </div>
+        <span data-label>Online</span>
+      </div>
+    </div>
+
+    <div class="center">
+      <section class="board-card">
+        <div class="board" aria-label="Checklist grid">
+          <div class="grid" id="grid"></div>
+        </div>
+      </section>
+
+      <section class="reward-card" aria-live="polite">
+        <div class="reward-visual"></div>
+        <div class="reward-meta">
+          <div class="type" id="rewardType">License Card</div>
+          <h2 id="rewardTitle">Sticker</h2>
+          <p id="rewardDesc">Complete any revealed tile to claim this reward.</p>
+        </div>
+        <div class="actions">
+          <button class="btn" id="completeButton">
+            <span class="btn-text">Mark as complete</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <div class="course-art"></div>
+      <div class="challenge">
+        <h3 id="course">Air Ride · Fantasy Meadows (Laps)</h3>
+        <p id="challengeText">Finish without missing any perfect landings</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="./checklist-data.js"></script>
+  <script>
+    const rows = 10;
+    const cols = 15;
+    const totalTiles = rows * cols;
+
+    const tabsEl = document.getElementById('tabs');
+    const boardEl = document.querySelector('.board');
+    const gridEl = document.getElementById('grid');
+    const rewardTypeEl = document.getElementById('rewardType');
+    const rewardTitleEl = document.getElementById('rewardTitle');
+    const rewardDescEl = document.getElementById('rewardDesc');
+    const courseEl = document.getElementById('course');
+    const challengeTextEl = document.getElementById('challengeText');
+    const completeBtn = document.getElementById('completeButton');
+    const courseArtEl = document.querySelector('.course-art');
+    const footerEl = document.querySelector('.footer');
+    const filterToggle = document.getElementById('filterToggle');
+    const filterPanel = document.getElementById('filterPanel');
+    const challengeFilterEl = document.getElementById('challengeFilter');
+    const rewardFilterEl = document.getElementById('rewardFilter');
+    const statusFilterEl = document.getElementById('statusFilter');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const filterState = { challengeType: '', rewardType: '', status: '' };
+    const tabConfig = {
+      'air-ride': {
+        label: 'Air Ride',
+        counts: { current: 0, total: 150 },
+        preset: []
+      },
+      'top-ride': {
+        label: 'Top Ride',
+        counts: { current: 0, total: 150 },
+        preset: []
+      },
+      'city-trial': {
+        label: 'City Trial',
+        counts: { current: 0, total: 150 },
+        preset: []
+      },
+      'road-trip': {
+        label: 'Road Trip',
+        counts: { current: 0, total: 150 },
+        preset: []
+      },
+      'online': {
+        label: 'Online',
+        counts: { current: 0, total: 150 },
+        preset: []
+      }
+    };
+
+    const tabOrder = ['air-ride', 'top-ride', 'city-trial', 'road-trip', 'online'];
+    let currentTab = 'air-ride';
+    const tabState = {};
+    const STORAGE_KEY = 'kirby-checklist-state';
+    const rewardVisualEl = document.querySelector('.reward-visual');
+    const dataLookup = tabOrder.reduce((acc, id) => {
+      acc[id] = {};
+      return acc;
+    }, {});
+    const boardBackgrounds = {
+      'top-ride': './assets/top-ride-machines.png'
+    };
+    const roadTripRewardImages = [
+      { src: './assets/road-trip/road_trip1__0020_layer-1.jpg', alt: 'License card theme - underwater coral' },
+      { src: './assets/road-trip/road_trip1__0019_obs64_2025-11-21_14-47-47.jpg', alt: 'License card icon - lava hill face' },
+      { src: './assets/road-trip/road_trip1__0018_obs64_2025-11-21_14-47-58.jpg', alt: 'License card theme - steampunk area' },
+      { src: './assets/road-trip/road_trip1__0017_obs64_2025-11-21_14-48-03.jpg', alt: 'Sticker - plain tree' },
+      { src: './assets/road-trip/road_trip1__0016_obs64_2025-11-21_14-48-06.jpg', alt: 'Sticker - long cylinder face' },
+      { src: './assets/road-trip/road_trip1__0015_obs64_2025-11-21_14-48-13.jpg', alt: 'Sticker - smiling sun' },
+      { src: './assets/road-trip/road_trip1__0014_obs64_2025-11-21_14-48-28.jpg', alt: 'Icon - kappa' },
+      { src: './assets/road-trip/road_trip1__0013_obs64_2025-11-21_14-48-32.jpg', alt: 'Sticker - steel robot with flames' },
+      { src: './assets/road-trip/road_trip1__0000_obs64_2025-11-21_14-50-00.jpg', alt: 'Icon - menacing sun' },
+      { src: './assets/road-trip/road_trip1__0011_obs64_2025-11-21_14-48-45.jpg', alt: 'Sticker - flat fish' },
+      { src: './assets/road-trip/road_trip1__0010_obs64_2025-11-21_14-48-52.jpg', alt: 'Sticker - orange toadstool' },
+      { src: './assets/road-trip/road_trip1__0008_obs64_2025-11-21_14-49-03.jpg', alt: 'Decal - cutter icon' },
+      { src: './assets/road-trip/road_trip1__0006_obs64_2025-11-21_14-49-13.jpg', alt: 'Sticker - fiery fish-toad' },
+      { src: './assets/road-trip/road_trip1__0005_obs64_2025-11-21_14-49-22.jpg', alt: 'Sticker - purple fish' },
+      { src: './assets/road-trip/road_trip1__0004_obs64_2025-11-21_14-49-26.jpg', alt: 'Decal - drill icon' },
+      { src: './assets/road-trip/road_trip1__0003_obs64_2025-11-21_14-49-32.jpg', alt: 'Sticker - fish in goggles' },
+      { src: './assets/road-trip/road_trip1__0002_obs64_2025-11-21_14-49-52.jpg', alt: 'Sticker - apple tree face' },
+      { src: './assets/road-trip/road_trip1__0001_obs64_2025-11-21_14-49-57.jpg', alt: 'Sticker - spiked shark' },
+      { src: './assets/road-trip/road_trip1__0000_obs64_2025-11-21_14-50-01.jpg', alt: 'Icon - wheel with eye' }
+    ];
+
+    // Build tile lookup from checklist-data.js
+    if (window.checklistData && Array.isArray(window.checklistData)) {
+      window.checklistData.forEach(entry => {
+        const { mode, coordinate } = entry;
+        if (!mode || !coordinate || coordinate.length !== 2) return;
+        const [row, col] = coordinate;
+        if (row < 0 || row >= rows || col < 0 || col >= cols) return;
+        const idx = row * cols + col;
+        if (!dataLookup[mode]) dataLookup[mode] = {};
+        dataLookup[mode][idx] = entry;
+      });
+    } else {
+      console.warn('No checklistData found; using fallbacks.');
+    }
+
+    function presetToTiles(preset, selectedIndex) {
+      const revealedSet = new Set(preset);
+      return Array.from({ length: totalTiles }, (_, i) => ({
+        revealed: revealedSet.has(i),
+        selected: i === selectedIndex
+      }));
+    }
+
+    function ensureTabState(id) {
+      if (!tabState[id]) {
+        const preset = tabConfig[id].preset || [];
+        const defaultSelection = Math.floor(totalTiles / 2);
+        tabState[id] = {
+          tiles: presetToTiles(preset, defaultSelection),
+          selectedIndex: defaultSelection,
+          currentCount: tabConfig[id].counts.current
+        };
+      }
+      return tabState[id];
+    }
+
+    function updateTabCounts(tabId) {
+      const state = ensureTabState(tabId);
+      const config = tabConfig[tabId];
+      document.querySelectorAll(`[data-tab="${tabId}"] [data-count]`).forEach(el => {
+        el.textContent = state.currentCount;
+      });
+      document.querySelectorAll(`[data-tab="${tabId}"] [data-total]`).forEach(el => {
+        el.textContent = typeof config.counts.total === 'number' ? `/ ${config.counts.total}` : config.counts.total;
+      });
+      document.querySelectorAll(`[data-tab="${tabId}"] [data-label]`).forEach(el => {
+        el.textContent = config.label;
+      });
+    }
+
+    function renderGrid() {
+      gridEl.innerHTML = '';
+      gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+      const { tiles } = ensureTabState(currentTab);
+      tiles.forEach((tile, index) => {
+        const el = document.createElement('div');
+        el.className = 'tile';
+        const tileData = dataLookup[currentTab] && dataLookup[currentTab][index]
+          ? { ...dataLookup[currentTab][index], revealed: tile.revealed }
+          : null;
+        if (tile.revealed) el.classList.add('revealed');
+        const match = isTileHighlighted(tileData);
+        const hasFilter = filterState.challengeType || filterState.rewardType;
+        if (match) el.classList.add('highlighted');
+        else if (hasFilter) el.classList.add('dimmed');
+        if (tile.selected) el.classList.add('selected');
+        el.addEventListener('click', () => {
+          selectTile(index);
+        });
+        gridEl.appendChild(el);
+      });
+    }
+
+    function selectTile(index) {
+      const state = ensureTabState(currentTab);
+      state.selectedIndex = index;
+      state.tiles = state.tiles.map((t, i) => ({
+        ...t,
+        selected: i === index
+      }));
+
+      updatePanels();
+      renderGrid();
+      updateActionLabel();
+    }
+
+    function getFallbackReward(tabId) {
+      return { type: 'Reward', title: tabConfig[tabId].label || 'Reward', desc: '' };
+    }
+
+    function getFallbackChallenge(tabId) {
+      return { course: tabConfig[tabId].label, text: 'Complete a checklist square.' };
+    }
+
+    function isTileHighlighted(tileData) {
+      if (!tileData) return false;
+      const hasFilter = filterState.challengeType || filterState.rewardType || filterState.status;
+      if (!hasFilter) return true;
+      if (filterState.challengeType && tileData.challengeType !== filterState.challengeType) return false;
+      if (filterState.rewardType && tileData.rewardType !== filterState.rewardType) return false;
+      if (filterState.status) {
+        const isComplete = Boolean(tileData.revealed);
+        if (filterState.status === 'complete' && !isComplete) return false;
+        if (filterState.status === 'incomplete' && isComplete) return false;
+      }
+      return true;
+    }
+
+    function populateSelect(selectEl, options, currentValue) {
+      if (!selectEl) return;
+      selectEl.innerHTML = '<option value="">Any</option>';
+      options.sort((a, b) => a.localeCompare(b)).forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        selectEl.appendChild(option);
+      });
+      if (currentValue && options.includes(currentValue)) {
+        selectEl.value = currentValue;
+      } else {
+        selectEl.value = '';
+      }
+    }
+
+    function buildFilterOptions() {
+      const dataset = dataLookup[currentTab] || {};
+      const challenges = new Set();
+      const rewards = new Set();
+      Object.values(dataset).forEach(entry => {
+        if (entry.challengeType) challenges.add(entry.challengeType);
+        if (entry.rewardType) rewards.add(entry.rewardType);
+      });
+      populateSelect(challengeFilterEl, Array.from(challenges), filterState.challengeType);
+      populateSelect(rewardFilterEl, Array.from(rewards), filterState.rewardType);
+      // If the current filter no longer exists for this tab, clear it.
+      if (!challenges.has(filterState.challengeType)) filterState.challengeType = '';
+      if (!rewards.has(filterState.rewardType)) filterState.rewardType = '';
+      if (statusFilterEl) statusFilterEl.value = filterState.status || '';
+    }
+
+    function applyFiltersFromUI() {
+      filterState.challengeType = challengeFilterEl ? challengeFilterEl.value : '';
+      filterState.rewardType = rewardFilterEl ? rewardFilterEl.value : '';
+      filterState.status = statusFilterEl ? statusFilterEl.value : '';
+      renderGrid();
+    }
+
+    function updatePanels() {
+      const state = ensureTabState(currentTab);
+      const index = state.selectedIndex;
+      const tileData = (dataLookup[currentTab] && dataLookup[currentTab][index]) || null;
+      const fallbackReward = getFallbackReward(currentTab);
+      const fallbackChallenge = getFallbackChallenge(currentTab);
+
+      const reward = tileData && tileData.rewardType ? {
+        type: tileData.rewardType,
+        title: tileData.rewardLabel || tileData.rewardType,
+        image: tileData.rewardImage || '',
+        desc: tileData.rewardDesc || ''
+      } : { type: fallbackReward.type, title: fallbackReward.title, image: '' };
+
+      const challenge = tileData && tileData.challengeType ? {
+        course: tileData.challengeType,
+        text: tileData.challenge,
+        image: tileData.challengeImage || ''
+      } : fallbackChallenge;
+
+      const config = tabConfig[currentTab];
+      // Attach Polygon sticker/icon art for Road Trip rewards if none present.
+      if (!reward.image && currentTab === 'road-trip' && roadTripRewardImages.length) {
+        const needsArt = /(Sticker|Icon|Theme|License Card|Decal)/i.test(reward.type) || /(Sticker|Icon|Theme|Decal)/i.test(reward.title);
+        if (needsArt) {
+          const slot = index % roadTripRewardImages.length;
+          reward.image = roadTripRewardImages[slot].src;
+          if (!reward.desc) reward.desc = roadTripRewardImages[slot].alt;
+        }
+      }
+
+      rewardTypeEl.textContent = reward.type;
+      rewardTitleEl.textContent = reward.title;
+      rewardDescEl.textContent = reward.desc || '';
+      if (reward.image) {
+        rewardVisualEl.style.backgroundImage = `url(${reward.image})`;
+        rewardVisualEl.style.backgroundSize = 'cover';
+        rewardVisualEl.style.backgroundRepeat = 'no-repeat';
+        rewardVisualEl.style.backgroundPosition = 'center';
+      } else {
+        rewardVisualEl.style.backgroundImage = '';
+        rewardVisualEl.style.background = 'var(--reward-bg)';
+      }
+
+      courseEl.textContent = challenge.course;
+      challengeTextEl.textContent = challenge.text;
+      if (challenge.image) {
+        courseArtEl.style.display = 'block';
+        courseArtEl.style.backgroundImage = `url(${challenge.image})`;
+        footerEl.classList.remove('no-art');
+      } else {
+        courseArtEl.style.display = 'none';
+        courseArtEl.style.backgroundImage = '';
+        footerEl.classList.add('no-art');
+      }
+    }
+
+    function updateActionLabel() {
+      const state = ensureTabState(currentTab);
+      const tile = state.tiles[state.selectedIndex];
+      const textEl = document.querySelector('#completeButton .btn-text');
+      if (!textEl || !tile) return;
+      textEl.textContent = tile.revealed ? 'Mark as incomplete' : 'Mark as complete';
+    }
+
+    function markSelectedComplete() {
+      const state = ensureTabState(currentTab);
+      const config = tabConfig[currentTab];
+      const index = state.selectedIndex;
+      if (index < 0) return;
+      const tile = state.tiles[index];
+      const wasRevealed = !!tile.revealed;
+      const nowRevealed = !wasRevealed;
+
+      state.tiles[index] = { ...tile, revealed: nowRevealed, selected: true };
+      if (typeof config.counts.total === 'number') {
+        if (nowRevealed && !wasRevealed) {
+          state.currentCount = Math.min(state.currentCount + 1, config.counts.total);
+        } else if (!nowRevealed && wasRevealed) {
+          state.currentCount = Math.max(state.currentCount - 1, 0);
+        }
+      }
+      updateTabCounts(currentTab);
+      updatePanels();
+      renderGrid();
+      updateActionLabel();
+      persistState();
+    }
+
+    function serializeState() {
+      const payload = { version: 1, currentTab, tabs: {} };
+      tabOrder.forEach(id => {
+        const state = ensureTabState(id);
+        payload.tabs[id] = {
+          selectedIndex: state.selectedIndex,
+          currentCount: state.currentCount,
+          tiles: state.tiles.map(t => ({ revealed: !!t.revealed }))
+        };
+      });
+      return payload;
+    }
+
+    function applyState(data) {
+      if (!data || typeof data !== 'object' || !data.tabs) return false;
+      tabOrder.forEach(id => {
+        const incoming = data.tabs[id];
+        if (!incoming) return;
+        const presetTiles = Array.from({ length: totalTiles }, (_, i) => {
+          const revealed = incoming.tiles && incoming.tiles[i] ? !!incoming.tiles[i].revealed : false;
+          return { revealed, selected: false };
+        });
+        const selectedIndex = Math.min(
+          Math.max(incoming.selectedIndex ?? 0, 0),
+          totalTiles - 1
+        );
+        tabState[id] = {
+          tiles: presetTiles.map((t, idx) => ({ ...t, selected: idx === selectedIndex })),
+          selectedIndex,
+          currentCount: Math.max(0, Math.min(incoming.currentCount ?? 0, typeof tabConfig[id].counts.total === 'number' ? tabConfig[id].counts.total : incoming.currentCount ?? 0))
+        };
+      });
+      const nextTab = tabOrder.includes(data.currentTab) ? data.currentTab : currentTab;
+      setActiveTab(nextTab);
+      return true;
+    }
+
+    function persistState() {
+      const state = serializeState();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function setActiveTab(tabId) {
+      currentTab = tabId;
+      ensureTabState(tabId);
+      // Update active styling on tabs.
+      document.querySelectorAll('.top-slot').forEach(el => {
+        el.classList.toggle('active', el.dataset.tab === tabId);
+      });
+      updateTabCounts(tabId);
+      updateBoardBackground();
+
+      const state = tabState[tabId];
+      updatePanels();
+      renderGrid();
+      updateActionLabel();
+      buildFilterOptions();
+    }
+
+    tabsEl.addEventListener('click', (event) => {
+      const tabEl = event.target.closest('[data-tab]');
+      if (!tabEl) return;
+      const tabId = tabEl.dataset.tab;
+      if (tabId === currentTab) return;
+      setActiveTab(tabId);
+    });
+
+    completeBtn.addEventListener('click', markSelectedComplete);
+
+    function updateBoardBackground() {
+      const img = boardBackgrounds[currentTab];
+      if (img) {
+        boardEl.classList.add('has-image');
+        boardEl.style.setProperty('--board-image', `url(${img})`);
+      } else {
+        boardEl.classList.remove('has-image');
+        boardEl.style.removeProperty('--board-image');
+      }
+    }
+
+    function loadFromStorageIfAvailable() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      try {
+        const parsed = JSON.parse(raw);
+        const loaded = applyState(parsed);
+        if (loaded) {
+          tabOrder.forEach(id => updateTabCounts(id));
+          updateBoardBackground();
+          renderGrid();
+          updateActionLabel();
+          return true;
+        }
+      } catch (err) {
+        console.error('Failed to load saved state', err);
+      }
+      return false;
+    }
+
+    // Initialize: try auto-load from localStorage; otherwise seed defaults.
+    const didLoad = loadFromStorageIfAvailable();
+    if (!didLoad) {
+      tabOrder.forEach(id => {
+        ensureTabState(id);
+        updateTabCounts(id);
+      });
+      updateBoardBackground();
+      setActiveTab(currentTab);
+    }
+    // Build initial filter options and wire events.
+    buildFilterOptions();
+
+    if (filterToggle && filterPanel) {
+      filterToggle.addEventListener('click', () => {
+        filterPanel.classList.toggle('open');
+      });
+    }
+
+    if (challengeFilterEl) {
+      challengeFilterEl.addEventListener('change', applyFiltersFromUI);
+    }
+    if (rewardFilterEl) {
+      rewardFilterEl.addEventListener('change', applyFiltersFromUI);
+    }
+    if (statusFilterEl) {
+      statusFilterEl.addEventListener('change', applyFiltersFromUI);
+    }
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener('click', () => {
+        filterState.challengeType = '';
+        filterState.rewardType = '';
+        filterState.status = '';
+        buildFilterOptions();
+        renderGrid();
+      });
+    }
+  </script>
+</body>
+
+</html>
